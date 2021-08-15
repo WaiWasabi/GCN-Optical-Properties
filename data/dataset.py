@@ -99,7 +99,7 @@ class MoleculeDataset(Dataset):
 
     @property
     def processed_file_names(self):
-        idx = self.data.reset_index(inplace=False, drop=True)
+        idx = self.data
         if self.test:
             return [os.path.join('test', f'{i}.pt') for i in list(idx.index)]
         else:

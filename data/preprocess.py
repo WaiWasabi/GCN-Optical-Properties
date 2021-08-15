@@ -49,13 +49,14 @@ def graph_from_smiles(smiles_list):
 cro_nodes, cro_edges = graph_from_smiles(dataframe['Chromophore'])
 solv_nodes, solv_edges = graph_from_smiles(dataframe['Solvent'])
 
-data_dict = {'cro_nodes': [torch.tensor(nodes) for nodes in cro_nodes],
-             'cro_edges': [to_adj_list(edges) for edges in cro_edges],
-             'cro_attribs': None,
-             'solv_nodes': [torch.tensor(nodes) for nodes in solv_nodes],
-             'solv_edges': [to_adj_list(edges) for edges in solv_edges],
-             'solv_attribs': None,
-             'ys': [torch.tensor(y) for y in dataframe['Emission max (nm)']]}
+data_list = [[torch.tensor(nodes) for nodes in cro_nodes],  # chromophore nodes
+             [to_adj_list(edges) for edges in cro_edges],  # chromophore edge lists
+             None,  # chromophore edge attributes
+             [torch.tensor(nodes) for nodes in solv_nodes],  # solvent nodes
+             [to_adj_list(edges) for edges in solv_edges],  # solvent edge lists
+             None,  # solvent edge attributes
+             [torch.tensor(y) for y in dataframe['Emission max (nm)']]]  # y values
 
 with open('interim/multi-graph-dict', 'wb') as file:
-    pickle.dump(data_dict, file, protocol=pickle.HIGHEST_PROTOCOL)
+    for data in data_list:
+        pickle.dump(data, file, protocol=pickle.HIGHEST_PROTOCOL)

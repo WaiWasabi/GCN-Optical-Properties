@@ -1,3 +1,4 @@
-data/processed/cro_emax
+data/processed/
+data/interim/
 data/__pycache__
 model/__pycache__

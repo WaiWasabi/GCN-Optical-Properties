@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 from pysmiles import read_smiles
 import networkx as nx
@@ -12,7 +11,8 @@ from vars import *
 logging.getLogger('pysmiles').setLevel(logging.CRITICAL)
 
 path = 'raw/rev02.csv'
-dataframe = pd.read_csv(path, delimiter=',')[['Chromophore', 'Emission max (nm)']].dropna()
+dataframe = pd.read_csv(path, delimiter=',')[['Chromophore', 'Solvent', 'Emission max (nm)']].dropna()
+dataframe = dataframe[dataframe.Solvent != 'gas']
 
 
 def to_one_hot(atom):  # generate one-hot encodings for an individual atom
@@ -37,21 +37,25 @@ def to_adj_list(adj_matrix):
     return torch.LongTensor(output)
 
 
-mols = []  # list of objects
+def graph_from_smiles(smiles_list):
+    mols = []  # list of objects
+    for smiles in smiles_list:
+        mols.append(read_smiles(smiles.replace('se', 'Se')))
+    edges = map(lambda x: nx.adjacency_matrix(x).todense(), mols)
+    nodes = map(lambda x: [to_one_hot(enum[1]) for enum in x.nodes(data='element')], mols)
+    return nodes, edges
 
-for smiles in dataframe['Chromophore']:
-    mols.append(read_smiles(smiles.replace('se', 'Se')))
 
-adjs = map(lambda x: nx.adjacency_matrix(x).todense(), mols)
-vecs = map(lambda x: [to_one_hot(enum[1]) for enum in x.nodes(data='element')], mols)
+cro_nodes, cro_edges = graph_from_smiles(dataframe['Chromophore'])
+solv_nodes, solv_edges = graph_from_smiles(dataframe['Solvent'])
 
-data_dict = {'xs': [torch.tensor(pad_vec(vec, MAX_SIZE)) for vec in vecs],
-             'edge_indices': [to_adj_list(adj) for adj in adjs],
-             'edge_attribs': None,
+data_dict = {'cro_nodes': [torch.tensor(nodes) for nodes in cro_nodes],
+             'cro_edges': [to_adj_list(edges) for edges in cro_edges],
+             'cro_attribs': None,
+             'solv_nodes': [torch.tensor(nodes) for nodes in solv_nodes],
+             'solv_edges': [to_adj_list(edges) for edges in solv_edges],
+             'solv_attribs': None,
              'ys': [torch.tensor(y) for y in dataframe['Emission max (nm)']]}
 
-data = [Data(x=vec, edge_index=adj, y=y) for vec, adj, y in
-        zip(data_dict['xs'], data_dict['edge_indices'], data_dict['ys'])]
-
-with open('processed/cro_emax', 'wb') as file:
-    pickle.dump(data, file, protocol=pickle.HIGHEST_PROTOCOL)
+with open('interim/multi-graph-dict', 'wb') as file:
+    pickle.dump(data_dict, file, protocol=pickle.HIGHEST_PROTOCOL)

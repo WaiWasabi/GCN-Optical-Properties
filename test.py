@@ -2,23 +2,11 @@ from torch_geometric.data import Data
 import torch
 import pickle
 import pandas as pd
+from tqdm import tqdm
+from rdkit import Chem
+from data.dataset import MoleculeDataset
 
 interim = 'data/interim/multi-graph-dict'
 processed = 'data/processed/em-with-solvent'
 
-with open(processed, 'rb') as file:
-    train, test = pickle.load(file)
-
-# torch.set_printoptions(profile="full")
-
-"""for i in range(10):
-    print("c-graph shape:", data['cro_nodes'][i].shape)
-    print("s-graph shape:", data['solv_nodes'][i].shape)
-    print("c-edge shape:", data['cro_edges'][i].shape)
-    print("s-edge shape:", data['solv_edges'][i].shape)
-    print('-------')"""
-
-for batch in train:
-    print(batch)
-
-
+dataset = MoleculeDataset('data', 'rev02.csv')

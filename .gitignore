@@ -2,3 +2,4 @@ data/processed/
 data/interim/
 data/__pycache__
 model/__pycache__
+legacy/.ipynb_checkpoints

@@ -1,4 +1,8 @@
-from model.emax_regression import GCN
+import os
+
+from data.dataset import MoleculeDataset
+from data.vars import batch_size
+from model.with_solvent import SolventGCN
 from model.train_step import *
 from model.hparam_tuner import grid_search
 from torch_geometric.data import DataLoader
@@ -10,42 +14,42 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 warnings.filterwarnings('ignore')
-data_path = 'data/interim/unpadded_emax'
 
-with open(data_path, 'rb') as file:
-    data = pickle.load(file)
+try:
+    os.mkdir('data/processed/train')
+    os.mkdir('data/processed/test')
+except OSError:
+    pass
 
-batch_size = 64
-data_size = len(data)
-train_loader = DataLoader(data[:int(data_size * 0.8)], batch_size=batch_size, shuffle=True)
-test_loader = DataLoader(data[int(data_size * 0.8):], batch_size=batch_size, shuffle=True)
+train_ds = MoleculeDataset('data', 'train_rev02.csv', test=False)
+test_ds = MoleculeDataset('data', 'test_rev02.csv', test=True)
+
+train_loader = DataLoader(train_ds, batch_size=batch_size, follow_batch=['x_c', 'x_s'], shuffle=True)
+test_loader = DataLoader(test_ds, batch_size=batch_size, follow_batch=['x_c', 'x_s'], shuffle=True)
 
 gpu = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+model = SolventGCN().to(gpu)
+mse_loss = torch.nn.MSELoss()
+adam = torch.optim.Adam(model.parameters(), lr=0.001)
 
-# model = GCN().to(gpu)
-
-# mse_loss = torch.nn.MSELoss()
-# adam = torch.optim.Adagrad(model.parameters(), lr=0.001, weight_decay=1e-4)
-
-log, loss_arr = grid_search(train_loader, [0.0001, 0.01], 0.001, [32, 128], 16, 15, gpu)
+"""log, loss_arr = grid_search(train_loader, [0.0001, 0.01], 0.001, [32, 128], 16, 15, gpu)
 
 logfile(log, "heatmap")
-logfile(loss_arr, "loss-trends")
+logfile(loss_arr, "loss-trends")"""
 
-"""print("Starting training...")
+print("Starting training...")
 losses = []
 logs = []
 epochs = 50
 for epoch in range(epochs):
-    loss, embedding, log = train_cro_only(model, train_loader, mse_loss, adam, gpu, history=True)
+    loss, embedding, log = train_with_solvent(model, train_loader, mse_loss, adam, gpu, history=True)
     losses.append(loss)
     logs.extend(log)
     if epoch % 1 == 0:
-        print(f"Epoch {epoch+1} | Train Loss {loss}")
+        print(f"Epoch {epoch + 1} | Train Loss {loss}")
 
-model_path = 'model/saved_models/emax'
+model_path = 'model/saved_models/emax-solvent'
 torch.save(model.state_dict(), model_path)
-
 
 # Analyze the results for one batch
 test_batch = next(iter(test_loader))
@@ -60,7 +64,6 @@ df["y_pred"] = df["y_pred"].apply(lambda row: row)
 print(df)
 
 losses_float = [float(loss.cpu().detach().numpy()) for loss in losses]
-loss_indices = [i for i,l in enumerate(losses_float)]
+loss_indices = [i for i, l in enumerate(losses_float)]
 plt.plot(loss_indices, losses_float)
 plt.show()
-"""

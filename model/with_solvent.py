@@ -16,7 +16,7 @@ class SolventGCN(Module):
     def __init__(self):
         super(SolventGCN, self).__init__()
         torch.manual_seed(42)
-        self.cro_conv0 = GCNConv(input_shape, cro_embed)  # embedding?
+        self.cro_conv0 = GCNConv(input_shape, cro_embed)
         self.cro_conv1 = GCNConv(cro_embed, cro_embed)
         self.cro_conv2 = GCNConv(cro_embed, cro_embed)
 
@@ -27,14 +27,14 @@ class SolventGCN(Module):
         self.dense = Linear((cro_embed + solv_embed)*2, dense_dim)
         self.out = Linear(dense_dim, output_dim)
 
-    def forward(self, c, c_edge, c_batch, s, s_edge, s_batch):
-        cro = f.relu(self.cro_conv0(c, c_edge))
-        cro = f.relu(self.cro_conv1(cro, c_edge))
-        cro = f.relu(self.cro_conv2(cro, c_edge))
+    def forward(self, c, c_edge, c_attrib, c_batch, s, s_edge, s_attrib, s_batch):
+        cro = f.relu(self.cro_conv0(c, c_edge, c_attrib))
+        cro = f.relu(self.cro_conv1(cro, c_edge, c_attrib))
+        cro = f.relu(self.cro_conv2(cro, c_edge, c_attrib))
 
-        solv = f.relu(self.solv_conv0(s, s_edge))
-        solv = f.relu(self.solv_conv1(solv, s_edge))
-        solv = f.relu(self.solv_conv2(solv, s_edge))
+        solv = f.relu(self.solv_conv0(s, s_edge, s_attrib))
+        solv = f.relu(self.solv_conv1(solv, s_edge, s_attrib))
+        solv = f.relu(self.solv_conv2(solv, s_edge, s_attrib))
 
         embed = torch.cat([gmp(cro, c_batch), gap(cro, c_batch),
                            gmp(solv, s_batch), gap(solv, s_batch)], dim=1)

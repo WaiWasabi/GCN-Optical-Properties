@@ -1,7 +1,6 @@
-from dataset import MoleculeDataset
+from data.dataset import MoleculeDataset
 from torch_geometric.data import DataLoader
 from data.vars import batch_size
-import pickle
 import os
 
 try:
@@ -15,7 +14,3 @@ test_ds = MoleculeDataset(os.getcwd(), 'test_rev02.csv', test=True)
 
 train_loader = DataLoader(train_ds, batch_size=batch_size, follow_batch=['x_c', 'x_s'], shuffle=True)
 test_loader = DataLoader(test_ds, batch_size=batch_size, follow_batch=['x_c', 'x_s'], shuffle=True)
-
-
-with open('processed/train-test-loaders', 'wb') as file:
-    pickle.dump([train_loader, test_loader], file, protocol=pickle.HIGHEST_PROTOCOL)

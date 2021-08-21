@@ -23,11 +23,10 @@ def train_with_solvent(model, loader, loss_fn, optimizer, device, history=False)
     loss, embedding = (None, None)
     for batch in loader:
         batch.to(device)
-        print(batch)
         optimizer.zero_grad()
-        pred, embedding = model(batch.x_c.float(), batch.edge_c, batch.attrib_c, batch.x_c_batch,
-                                batch.x_s.float(), batch.edge_s, batch.attrib_s, batch.x_s_batch)
-        loss = torch.sqrt(loss_fn(batch.y, pred))
+        pred, embedding = model(batch.x_c.float(), batch.edge_index_c, batch.edge_attr_c, batch.x_c_batch,
+                                batch.x_s.float(), batch.edge_index_s, batch.edge_attr_s, batch.x_s_batch)
+        loss = torch.sqrt(loss_fn(batch.y.float(), pred))
         loss.backward()
         optimizer.step()
         log.append([pred, batch.y])

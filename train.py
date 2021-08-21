@@ -1,7 +1,5 @@
 import os
 
-from data.dataset import MoleculeDataset
-from data.vars import batch_size
 from model.with_solvent import SolventGCN
 from model.train_step import *
 from model.hparam_tuner import grid_search
@@ -15,22 +13,13 @@ import pandas as pd
 
 warnings.filterwarnings('ignore')
 
-try:
-    os.mkdir('data/processed/train')
-    os.mkdir('data/processed/test')
-except OSError:
-    pass
-
-train_ds = MoleculeDataset('data', 'train_rev02.csv', test=False)
-test_ds = MoleculeDataset('data', 'test_rev02.csv', test=True)
-
-train_loader = DataLoader(train_ds, batch_size=batch_size, follow_batch=['x_c', 'x_s'], shuffle=True)
-test_loader = DataLoader(test_ds, batch_size=batch_size, follow_batch=['x_c', 'x_s'], shuffle=True)
+with open('data/processed/train-test-loaders', 'rb') as file:
+    train_loader, test_loader = pickle.load(file)
 
 gpu = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 model = SolventGCN().to(gpu)
 mse_loss = torch.nn.MSELoss()
-adam = torch.optim.Adam(model.parameters(), lr=0.001)
+adam = torch.optim.Adam(model.parameters(), lr=0.0006)
 
 """log, loss_arr = grid_search(train_loader, [0.0001, 0.01], 0.001, [32, 128], 16, 15, gpu)
 
@@ -41,6 +30,7 @@ print("Starting training...")
 losses = []
 logs = []
 epochs = 50
+
 for epoch in range(epochs):
     loss, embedding, log = train_with_solvent(model, train_loader, mse_loss, adam, gpu, history=True)
     losses.append(loss)
@@ -55,7 +45,8 @@ torch.save(model.state_dict(), model_path)
 test_batch = next(iter(test_loader))
 with torch.no_grad():
     test_batch.to(gpu)
-    pred, embed = model(test_batch.x.float(), test_batch.edge_index, test_batch.batch)
+    pred, embed = model(test_batch.x_c.float(), test_batch.edge_index_c, test_batch.edge_attr_c, test_batch.x_c_batch,
+                        test_batch.x_s.float(), test_batch.edge_index_s, test_batch.edge_attr_s, test_batch.x_s_batch)
     df = pd.DataFrame()
     df["y_real"] = test_batch.y.tolist()
     df["y_pred"] = pred.tolist()

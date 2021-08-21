@@ -1,12 +1,9 @@
-from torch_geometric.data import Data
-import torch
-import pickle
-import pandas as pd
-from tqdm import tqdm
-from rdkit import Chem
-from data.dataset import MoleculeDataset
+from torch_geometric.datasets import MoleculeNet
 
 interim = 'data/interim/multi-graph-dict'
 processed = 'data/processed/em-with-solvent'
 
-dataset = MoleculeDataset('data', 'rev02.csv')
+data = MoleculeNet(root=".", name="ESOL")
+print(data[0].edge_attr.shape)
+print(data[0].edge_index.shape)
+print(data[0].x.shape)

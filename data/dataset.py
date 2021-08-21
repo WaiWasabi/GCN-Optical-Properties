@@ -65,20 +65,20 @@ def _get_adjacency_info(mol):
 
 
 class MolPair(Data):
-    def __init__(self, x_c, edge_c, attrib_c, x_s, edge_s, attrib_s, y):
+    def __init__(self, x_c, edge_index_c, edge_attr_c, x_s, edge_index_s, edge_attr_s, y):
         super(MolPair, self).__init__()
         self.y = y
-        self.attrib_s = attrib_s
-        self.edge_s = edge_s
+        self.edge_attr_s = edge_attr_s
+        self.edge_index_s = edge_index_s
         self.x_s = x_s
-        self.attrib_c = attrib_c
-        self.edge_c = edge_c
+        self.edge_attr_c = edge_attr_c
+        self.edge_index_c = edge_index_c
         self.x_c = x_c
 
     def __inc__(self, key, value):
-        if key == 'edge_c':
+        if key == 'edge_index_c':
             return self.x_c.size(0)
-        if key == 'edge_s':
+        if key == 'edge_index_s':
             return self.x_s.size(0)
         else:
             return super().__inc__(key, value)
